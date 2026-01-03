@@ -7,5 +7,7 @@ export default defineConfig({
   preview: {
     cors: true,
     port: 12000,
+    host: '127.0.0.1',
+    strictPort: true,
   },
 })
