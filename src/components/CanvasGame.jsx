@@ -1,6 +1,7 @@
 // 游戏主组件 - Canvas 版本
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGame } from '../hooks/useGame';
+import { useSound } from '../hooks/useSound';
 import './Game.css';
 
 export function CanvasGame() {
@@ -23,6 +24,8 @@ export function CanvasGame() {
     handleEnd,
     useHandleBomb
   } = useGame();
+
+  const { soundEnabled, playSound, toggleSound } = useSound();
 
   const canvasRef = useRef(null);
   const gameStateRef = useRef(gameState);
@@ -575,37 +578,53 @@ export function CanvasGame() {
       if (gameState === 'start') {
         ctx.fillStyle = '#00d4ff';
         ctx.font = 'bold 48px Arial';
-        ctx.fillText('✈️ 飞机大战', gameWidth / 2, gameHeight / 2 - 150);
+        ctx.fillText('✈️ 飞机大战', gameWidth / 2, gameHeight / 2 - 180);
 
         ctx.fillStyle = '#ffffff';
         ctx.font = '18px Arial';
-        ctx.fillText('🖱️ 鼠标/触摸移动', gameWidth / 2, gameHeight / 2 - 60);
-        ctx.fillText('🔫 自动射击', gameWidth / 2, gameHeight / 2 - 30);
-        ctx.fillText('💣 按 B 键使用炸弹', gameWidth / 2, gameHeight / 2);
-        ctx.fillText('␣ 空格键暂停', gameWidth / 2, gameHeight / 2 + 30);
+        ctx.fillText('🖱️ 鼠标/触摸移动', gameWidth / 2, gameHeight / 2 - 80);
+        ctx.fillText('🔫 自动射击', gameWidth / 2, gameHeight / 2 - 50);
+        ctx.fillText('💣 按 B 键使用炸弹', gameWidth / 2, gameHeight / 2 - 20);
+        ctx.fillText('␣ 空格键暂停', gameWidth / 2, gameHeight / 2 + 10);
+
+        // 音效控制按钮
+        const soundBtnX = gameWidth / 2;
+        const soundBtnY = gameHeight / 2 + 55;
+        ctx.fillStyle = soundEnabled ? '#00d4ff' : '#666666';
+        ctx.beginPath();
+        ctx.arc(soundBtnX, soundBtnY, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '18px Arial';
+        ctx.fillText(soundEnabled ? '🔊' : '🔇', soundBtnX, soundBtnY + 1);
+
+        // 按钮说明
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillText('音效', soundBtnX, soundBtnY + 30);
 
         // 敌人类型说明
         ctx.font = '14px Arial';
         ctx.fillStyle = '#ff6b6b';
-        ctx.fillText('● 普通敌机', gameWidth / 2 - 80, gameHeight / 2 + 90);
+        ctx.fillText('● 普通敌机', gameWidth / 2 - 80, gameHeight / 2 + 110);
         ctx.fillStyle = '#ffd93d';
-        ctx.fillText('● 快速敌机', gameWidth / 2 + 80, gameHeight / 2 + 90);
+        ctx.fillText('● 快速敌机', gameWidth / 2 + 80, gameHeight / 2 + 110);
         ctx.fillStyle = '#6c5ce7';
-        ctx.fillText('● 坦克敌机', gameWidth / 2 - 80, gameHeight / 2 + 120);
+        ctx.fillText('● 坦克敌机', gameWidth / 2 - 80, gameHeight / 2 + 140);
         ctx.fillStyle = '#00b894';
-        ctx.fillText('● 射击敌机', gameWidth / 2 + 80, gameHeight / 2 + 120);
+        ctx.fillText('● 射击敌机', gameWidth / 2 + 80, gameHeight / 2 + 140);
 
         // 开始按钮
         ctx.fillStyle = '#00d4ff';
         ctx.beginPath();
-        ctx.roundRect(gameWidth / 2 - 100, gameHeight / 2 + 170, 200, 50, 25);
+        ctx.roundRect(gameWidth / 2 - 100, gameHeight / 2 + 180, 200, 50, 25);
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 20px Arial';
-        ctx.fillText('开始游戏', gameWidth / 2, gameHeight / 2 + 195);
+        ctx.fillText('开始游戏', gameWidth / 2, gameHeight / 2 + 205);
         ctx.font = '14px Arial';
         ctx.fillStyle = '#666666';
-        ctx.fillText('点击按钮或按空格键开始', gameWidth / 2, gameHeight / 2 + 240);
+        ctx.fillText('点击按钮或按空格键开始', gameWidth / 2, gameHeight / 2 + 250);
       }
       else if (gameState === 'paused') {
         ctx.fillStyle = '#ff6b6b';
@@ -657,9 +676,19 @@ export function CanvasGame() {
     const y = e.clientY - rect.top;
 
     if (gameStateRef.current === 'start') {
+      // 检查是否点击音效按钮
+      const soundBtnX = gameWidth / 2;
+      const soundBtnY = gameHeight / 2 + 55;
+      const distToSound = Math.sqrt(Math.pow(x - soundBtnX, 2) + Math.pow(y - soundBtnY, 2));
+      if (distToSound < 25) {
+        toggleSound();
+        return;
+      }
+
       // 检查是否点击开始按钮
-      if (y > gameHeight / 2 + 170 && y < gameHeight / 2 + 220 &&
+      if (y > gameHeight / 2 + 180 && y < gameHeight / 2 + 230 &&
           x > gameWidth / 2 - 100 && x < gameWidth / 2 + 100) {
+        playSound('start');
         startGame();
       }
     }
@@ -672,6 +701,7 @@ export function CanvasGame() {
     else if (gameStateRef.current === 'gameover') {
       if (y > gameHeight / 2 + 70 && y < gameHeight / 2 + 120 &&
           x > gameWidth / 2 - 100 && x < gameWidth / 2 + 100) {
+        playSound('start');
         startGame();
       }
     }

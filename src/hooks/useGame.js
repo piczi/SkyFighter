@@ -1,5 +1,6 @@
 // 飞机大战游戏 Hook
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSound } from './useSound';
 
 // 矩形与圆相交检测
 function rectCircleIntersect(rx, ry, rw, rh, cx, cy, radius) {
@@ -53,6 +54,7 @@ const SPAWN_INTERVAL = 1200;
 const SHOOT_INTERVAL = 200;
 
 export function useGame() {
+  const { soundEnabled, playSound } = useSound();
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
@@ -103,6 +105,7 @@ export function useGame() {
   const useHandleBomb = useCallback(() => {
     if (bombCount > 0 && gameState === 'playing') {
       setBombCount(prev => prev - 1);
+      playSound('bomb');
       enemiesRef.current.forEach(enemy => {
         const particles = [];
         for (let i = 0; i < 20; i++) {
@@ -120,11 +123,11 @@ export function useGame() {
         }
         setExplosions(prev => [
           ...prev,
-          { 
-            x: enemy.x + enemy.size / 2, 
-            y: enemy.y + enemy.size / 2, 
+          {
+            x: enemy.x + enemy.size / 2,
+            y: enemy.y + enemy.size / 2,
             id: Date.now() + Math.random(),
-            particles 
+            particles
           }
         ]);
         scoreRef.current += enemy.score;
@@ -192,6 +195,11 @@ export function useGame() {
             const currentHp = hitEnemies.get(enemy.id) ?? enemy.hp;
             const newHp = currentHp - bullet.damage;
             hitEnemies.set(enemy.id, newHp);
+
+            // 击中但未致死时播放音效
+            if (newHp > 0) {
+              playSound('hit');
+            }
 
             if (newHp <= 0) {
               deadEnemies.add(enemy.id);
@@ -295,6 +303,11 @@ export function useGame() {
           newBullets.push({ x: p.x + BULLET_WIDTH * 1.5, y: p.y - BULLET_HEIGHT + 20, damage: 1, angle: 0.1, id: now + 4 });
         }
 
+        // 只有在真正发射子弹时才播放音效
+        if (newBullets.length > 0) {
+          playSound('shoot');
+        }
+
         bulletsRef.current = [...bulletsRef.current, ...newBullets];
         lastShootRef.current = now;
       }
@@ -362,6 +375,7 @@ export function useGame() {
               id: now + Math.random()
             });
             newEnemy.lastShot = now;
+            playSound('enemyShoot');
           }
         }
         return newEnemy;
@@ -414,6 +428,7 @@ export function useGame() {
           playerRef.current.hp = Math.max(0, playerRef.current.hp - enemyBulletDamage);
           if (playerRef.current.hp <= 0) {
             setGameState('gameover');
+            playSound('gameOver');
           }
         } else {
           const totalDamage = enemyBulletDamage;
@@ -425,10 +440,12 @@ export function useGame() {
             playerRef.current.hp = Math.max(0, playerRef.current.hp - remaining);
             if (playerRef.current.hp <= 0) {
               setGameState('gameover');
+              playSound('gameOver');
             }
           }
         }
         playerStateChanged = true;
+        playSound('playerHit');
       }
 
       // 检测玩家与敌人碰撞
@@ -443,8 +460,10 @@ export function useGame() {
           scoreRef.current += enemy.score;
           playerRef.current.hp = Math.max(0, playerRef.current.hp - 30);
           playerStateChanged = true;
+          playSound('playerHit');
           if (playerRef.current.hp <= 0) {
             setGameState('gameover');
+            playSound('gameOver');
           }
         }
       }
@@ -470,13 +489,14 @@ export function useGame() {
         }
         setExplosions(prev => [
           ...prev,
-          { 
-            x: enemy.x + enemy.size / 2, 
-            y: enemy.y + enemy.size / 2, 
+          {
+            x: enemy.x + enemy.size / 2,
+            y: enemy.y + enemy.size / 2,
             id: Date.now() + Math.random(),
-            particles 
+            particles
           }
         ]);
+        playSound('explosion');
       });
 
       // 更新玩家状态 (仅当非位置属性改变时才更新 State，避免每帧重渲染)
@@ -525,10 +545,13 @@ export function useGame() {
           if (collected) {
             if (item.type === 'power') {
               playerRef.current.power = Math.min(5, playerRef.current.power + 1);
+              playSound('powerUp');
             } else if (item.type === 'bomb') {
               setBombCount(prev => prev + 1);
+              playSound('bombItem');
             } else if (item.type === 'shield') {
               playerRef.current.shield = Math.min(100, playerRef.current.shield + 50);
+              playSound('shield');
             }
             setPlayer({ ...playerRef.current });
             return false;
