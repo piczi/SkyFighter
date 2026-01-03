@@ -14,7 +14,33 @@ export function useSound() {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-    return audioContextRef.current;
+    const ctx = audioContextRef.current;
+    // 如果 AudioContext 被挂起，恢复它
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    return ctx;
+  }, []);
+
+  // 用户交互时恢复 AudioContext
+  useEffect(() => {
+    const handleInteraction = () => {
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume();
+      }
+    };
+
+    // 监听各种用户交互事件
+    ['click', 'keydown', 'touchstart'].forEach(event => {
+      window.addEventListener(event, handleInteraction, { once: true, passive: true });
+    });
+
+    return () => {
+      ['click', 'keydown', 'touchstart'].forEach(event => {
+        window.removeEventListener(event, handleInteraction);
+      });
+    };
   }, []);
 
   // 保存设置到 localStorage
