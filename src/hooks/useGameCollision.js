@@ -92,12 +92,7 @@ export function useGameCollision() {
                 setMaxCombo(currentCombo);
               }
               
-              // 技能点数奖励
-              if (enemy.type === 'boss') {
-                setters.setSkillPoints(prev => prev + 5);
-              } else if (enemy.type === 'tank' || enemy.type === 'bomber') {
-                setters.setSkillPoints(prev => prev + 1);
-              }
+
 
               // 道具掉落
               if (Math.random() < 0.12) {

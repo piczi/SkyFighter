@@ -156,26 +156,7 @@ export function CanvasGame() {
          }
        } else if (e.code === 'KeyB') {
          handleBomb();
-      } else if (e.code === 'Digit1') {
-        // 使用技能1 - 时间减缓
-        if (activeSkills.includes('timeSlow')) {
-          activateSkill('timeSlow');
-        }
-      } else if (e.code === 'Digit2') {
-        // 使用技能2 - 范围伤害
-        if (activeSkills.includes('areaDamage')) {
-          activateSkill('areaDamage');
-        }
-      } else if (e.code === 'Digit3') {
-        // 使用技能3 - 自动瞄准
-        if (activeSkills.includes('autoAim')) {
-          activateSkill('autoAim');
-        }
-      } else if (e.code === 'Digit4') {
-        // 使用技能4 - 能量护盾
-        if (activeSkills.includes('energyShield')) {
-          activateSkill('energyShield');
-        }
+  
       }
     };
 

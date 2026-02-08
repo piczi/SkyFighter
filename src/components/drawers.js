@@ -561,7 +561,7 @@ export const drawFPS = (ctx, gameWidth) => {
   ctx.font = '14px monospace';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'top';
-  ctx.fillText(`FPS: ${fps}`, gameWidth - 20, 45);
+  ctx.fillText(`FPS: ${fps}`, gameWidth - 20, 95);
 };
 
 export const drawOverlay = (ctx, gameState, gameWidth, gameHeight, gameData = {}) => {

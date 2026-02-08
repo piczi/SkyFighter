@@ -10,7 +10,7 @@ import {
   GAME_HEIGHT,
   LEVEL_CONFIG
 } from './gameConstants';
-import { executeSkill, getSkillCooldown } from './gameUtils';
+
 
 export function useGame() {
   const { playSound } = useSound();
@@ -65,9 +65,6 @@ export function useGame() {
   const [items, setItems] = useState([]);
   const [explosions, setExplosions] = useState([]);
   const [bombCount, setBombCount] = useState(LEVEL_CONFIG.bombInitialCount);
-  const [skillPoints, setSkillPoints] = useState(0);
-  const [activeSkills, setActiveSkills] = useState([]);
-  const [skillCooldowns, setSkillCooldowns] = useState({});
 
   // Refs
   const gameLoopRef = useRef(null);
@@ -120,9 +117,6 @@ export function useGame() {
     setItems([]);
     setExplosions([]);
     setBombCount(LEVEL_CONFIG.bombInitialCount);
-    setSkillPoints(0);
-    setActiveSkills([]);
-    setSkillCooldowns({});
     setGameState('playing');
     lastShootRef.current = 0;
     lastSpawnRef.current = 0;
@@ -239,8 +233,7 @@ export function useGame() {
         setExplosions,
         setBombCount,
         setGameState,
-        lastPlayerStateRef,
-        setSkillPoints
+        lastPlayerStateRef
       });
     };
 
@@ -261,7 +254,7 @@ export function useGame() {
       handleBoss, updateBullets, handleItemCollection, createBossConfig,
       checkCollisions, checkBossCollisions, setScore, setLevel, setStage, setBoss,
       setCombo, setMaxCombo, setPlayer, setEnemies, setItems, setExplosions,
-      setBombCount, setGameState, setSkillPoints]);
+      setBombCount, setGameState]);
 
   return {
     gameState,
@@ -277,9 +270,7 @@ export function useGame() {
     items,
     explosions,
     bombCount,
-    skillPoints,
-    activeSkills,
-    skillCooldowns,
+
     gameWidth: GAME_WIDTH,
     gameHeight: GAME_HEIGHT,
     startGame,
@@ -291,22 +282,5 @@ export function useGame() {
     bulletsRef,
     enemiesRef,
     soundEnabled: true,
-    
-    unlockSkill: (skillId) => {
-      if (skillPoints > 0) {
-        setActiveSkills(prev => [...prev, skillId]);
-        setSkillPoints(prev => prev - 1);
-      }
-    },
-    
-    activateSkill: (skillId) => {
-      const now = Date.now();
-      const cooldown = skillCooldowns[skillId] || 0;
-      
-      if (now - cooldown > getSkillCooldown(skillId)) {
-        executeSkill(skillId, { enemiesRef, playerRef, boss }, setBoss);
-        setSkillCooldowns(prev => ({ ...prev, [skillId]: now }));
-      }
-    }
   };
 }
