@@ -7,6 +7,26 @@ import {
 } from './gameUtils';
 import { PLAYER_SIZE, BULLET_WIDTH, BULLET_HEIGHT } from './gameConstants';
 
+// 将椭圆碰撞转换为单位圆碰撞（通过坐标缩放），以复用现有的 circle/segment 工具函数
+function rectEllipseIntersect(rectX, rectY, rectW, rectH, ellipseCx, ellipseCy, ellipseRx, ellipseRy) {
+  // 避免除 0
+  if (!ellipseRx || !ellipseRy) return false;
+  const x = (rectX - ellipseCx) / ellipseRx;
+  const y = (rectY - ellipseCy) / ellipseRy;
+  const w = rectW / ellipseRx;
+  const h = rectH / ellipseRy;
+  return rectCircleIntersect(x, y, w, h, 0, 0, 1);
+}
+
+function segmentEllipseIntersect(x1, y1, x2, y2, ellipseCx, ellipseCy, ellipseRx, ellipseRy) {
+  if (!ellipseRx || !ellipseRy) return false;
+  const sx1 = (x1 - ellipseCx) / ellipseRx;
+  const sy1 = (y1 - ellipseCy) / ellipseRy;
+  const sx2 = (x2 - ellipseCx) / ellipseRx;
+  const sy2 = (y2 - ellipseCy) / ellipseRy;
+  return segmentCircleIntersect(sx1, sy1, sx2, sy2, 0, 0, 1);
+}
+
 /**
  * 游戏碰撞检测Hook
  * @returns {Object} 碰撞检测函数
@@ -38,7 +58,11 @@ export function useGameCollision() {
     for (const enemy of enemiesRef.current) {
       const enemyCenterX = enemy.x + enemy.size / 2;
       const enemyCenterY = enemy.y + enemy.size / 2;
+      const isBomber = enemy.type === 'bomber';
       const enemyRadius = enemy.size * 0.4;
+      // 轰炸机绘制为椭圆：ctx.ellipse(x, y, size*0.6, size*0.8, ...)
+      const bomberRx = enemy.size * 0.6;
+      const bomberRy = enemy.size * 0.8;
 
       for (const bullet of bulletsRef.current) {
         if (hitBullets.has(bullet.id)) continue;
@@ -54,20 +78,29 @@ export function useGameCollision() {
 
           // 激光武器特殊处理：直接检查矩形与圆碰撞
           if (bullet.isLaser) {
-            hit = rectCircleIntersect(bulletX, bulletY, bulletW, bulletH, enemyCenterX, enemyCenterY, enemyRadius);
+            hit = isBomber
+              ? rectEllipseIntersect(bulletX, bulletY, bulletW, bulletH, enemyCenterX, enemyCenterY, bomberRx, bomberRy)
+              : rectCircleIntersect(bulletX, bulletY, bulletW, bulletH, enemyCenterX, enemyCenterY, enemyRadius);
           } else {
             // 普通子弹使用线段碰撞检测
             if (bullet.prevX !== undefined && bullet.prevY !== undefined) {
-              hit = segmentCircleIntersect(bullet.prevX, bullet.prevY, bulletX, bulletY, enemyCenterX, enemyCenterY, enemyRadius);
-              if (!hit) hit = segmentCircleIntersect(bullet.prevX + bulletW, bullet.prevY, bulletX + bulletW, bulletY, enemyCenterX, enemyCenterY, enemyRadius);
-              if (!hit) hit = segmentCircleIntersect(bullet.prevX, bullet.prevY + bulletH, bulletX, bulletY + bulletH, enemyCenterX, enemyCenterY, enemyRadius);
-              if (!hit) hit = segmentCircleIntersect(bullet.prevX + bulletW, bullet.prevY + bulletH, bulletX + bulletW, bulletY + bulletH, enemyCenterX, enemyCenterY, enemyRadius);
-              if (!hit) hit = segmentCircleIntersect(bullet.prevX + bulletW/2, bullet.prevY + bulletH/2, bulletX + bulletW/2, bulletY + bulletH/2, enemyCenterX, enemyCenterY, enemyRadius);
+              const segHit = (x1, y1, x2, y2) =>
+                isBomber
+                  ? segmentEllipseIntersect(x1, y1, x2, y2, enemyCenterX, enemyCenterY, bomberRx, bomberRy)
+                  : segmentCircleIntersect(x1, y1, x2, y2, enemyCenterX, enemyCenterY, enemyRadius);
+
+              hit = segHit(bullet.prevX, bullet.prevY, bulletX, bulletY);
+              if (!hit) hit = segHit(bullet.prevX + bulletW, bullet.prevY, bulletX + bulletW, bulletY);
+              if (!hit) hit = segHit(bullet.prevX, bullet.prevY + bulletH, bulletX, bulletY + bulletH);
+              if (!hit) hit = segHit(bullet.prevX + bulletW, bullet.prevY + bulletH, bulletX + bulletW, bulletY + bulletH);
+              if (!hit) hit = segHit(bullet.prevX + bulletW/2, bullet.prevY + bulletH/2, bulletX + bulletW/2, bulletY + bulletH/2);
             }
 
             // 矩形与圆碰撞检测
             if (!hit) {
-              hit = rectCircleIntersect(bulletX, bulletY, bulletW, bulletH, enemyCenterX, enemyCenterY, enemyRadius);
+              hit = isBomber
+                ? rectEllipseIntersect(bulletX, bulletY, bulletW, bulletH, enemyCenterX, enemyCenterY, bomberRx, bomberRy)
+                : rectCircleIntersect(bulletX, bulletY, bulletW, bulletH, enemyCenterX, enemyCenterY, enemyRadius);
             }
           }
 
@@ -135,10 +168,18 @@ export function useGameCollision() {
     for (const enemy of enemiesRef.current) {
       if (deadEnemies.has(enemy.id)) continue;
 
-      const hit = rectIntersect(
-        playerX - PLAYER_SIZE/2, playerY - PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE,
-        enemy.x, enemy.y, enemy.size, enemy.size
-      );
+      const playerRectX = playerX - PLAYER_SIZE/2;
+      const playerRectY = playerY - PLAYER_SIZE/2;
+      const hit = enemy.type === 'bomber'
+        ? rectEllipseIntersect(
+            playerRectX, playerRectY, PLAYER_SIZE, PLAYER_SIZE,
+            enemy.x + enemy.size / 2, enemy.y + enemy.size / 2,
+            enemy.size * 0.6, enemy.size * 0.8
+          )
+        : rectIntersect(
+            playerRectX, playerRectY, PLAYER_SIZE, PLAYER_SIZE,
+            enemy.x, enemy.y, enemy.size, enemy.size
+          );
 
       if (hit) {
         deadEnemies.add(enemy.id);
