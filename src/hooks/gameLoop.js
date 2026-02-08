@@ -63,8 +63,7 @@ export function runGameLoop(params) {
     setExplosions,
     setBombCount,
     setGameState,
-    lastPlayerStateRef,
-    setSkillPoints
+    lastPlayerStateRef
   } = params;
 
   if (gameState !== 'playing') {
@@ -121,43 +120,6 @@ export function runGameLoop(params) {
     }
   }
 
-  // 更新Boss
-  if (boss) {
-    const newBoss = handleBoss(boss, { playerRef, bulletsRef }, { getBullet }, now, playSound);
-    setBoss(newBoss);
-  }
-
-  // 更新敌人
-  for (let i = 0; i < enemiesRef.current.length; i++) {
-    const enemy = enemiesRef.current[i];
-    let updatedEnemy = { ...enemy, y: enemy.y + enemy.speed };
-
-    if (enemy.type === 'shooter') {
-      updatedEnemy = handleShooterEnemy(updatedEnemy, { playerRef, bulletsRef }, { getBullet }, now, playSound);
-    }
-
-    if (enemy.type === 'bomber') {
-      updatedEnemy = handleBomberEnemy(updatedEnemy, { playerRef, bulletsRef }, { getBullet }, now, playSound);
-    }
-
-    if (enemy.type === 'splitter') {
-      updatedEnemy = handleSplitterEnemy(updatedEnemy, { enemiesRef }, { getEnemy }, now, 3, ENEMY_SIZE);
-    }
-
-    if (updatedEnemy.vx !== undefined || updatedEnemy.vy !== undefined) {
-      updatedEnemy.x += updatedEnemy.vx || 0;
-      updatedEnemy.y += updatedEnemy.vy || 0;
-    }
-
-    enemiesRef.current[i] = updatedEnemy;
-  }
-
-  // 更新子弹
-  const bulletsToRemove = updateBullets(bulletsRef.current, returnBullet);
-  for (let i = bulletsToRemove.length - 1; i >= 0; i--) {
-    bulletsRef.current.splice(bulletsToRemove[i], 1);
-  }
-
   // Boss碰撞检测
   if (boss) {
     const bossResult = checkBossCollisions(boss, { bulletsRef, playerRef }, {}, playSound);
@@ -199,11 +161,48 @@ export function runGameLoop(params) {
     }
   }
 
+  // 更新Boss位置和行为（只在Boss存活时）
+  if (boss && boss.hp > 0) {
+    const newBoss = handleBoss(boss, { playerRef, bulletsRef }, { getBullet }, now, playSound);
+    setBoss(newBoss);
+  }
+
+  // 更新敌人
+  for (let i = 0; i < enemiesRef.current.length; i++) {
+    const enemy = enemiesRef.current[i];
+    let updatedEnemy = { ...enemy, y: enemy.y + enemy.speed };
+
+    if (enemy.type === 'shooter') {
+      updatedEnemy = handleShooterEnemy(updatedEnemy, { playerRef, bulletsRef }, { getBullet }, now, playSound);
+    }
+
+    if (enemy.type === 'bomber') {
+      updatedEnemy = handleBomberEnemy(updatedEnemy, { playerRef, bulletsRef }, { getBullet }, now, playSound);
+    }
+
+    if (enemy.type === 'splitter') {
+      updatedEnemy = handleSplitterEnemy(updatedEnemy, { enemiesRef }, { getEnemy }, now, 3, ENEMY_SIZE);
+    }
+
+    if (updatedEnemy.vx !== undefined || updatedEnemy.vy !== undefined) {
+      updatedEnemy.x += updatedEnemy.vx || 0;
+      updatedEnemy.y += updatedEnemy.vy || 0;
+    }
+
+    enemiesRef.current[i] = updatedEnemy;
+  }
+
+  // 更新子弹
+  const bulletsToRemove = updateBullets(bulletsRef.current, returnBullet);
+  for (let i = bulletsToRemove.length - 1; i >= 0; i--) {
+    bulletsRef.current.splice(bulletsToRemove[i], 1);
+  }
+
   // 碰撞检测
   const collisionResult = checkCollisions(
     { bulletsRef, enemiesRef, playerRef },
     { combo, maxCombo },
-    { setCombo, setMaxCombo, setSkillPoints },
+    { setCombo, setMaxCombo },
     { getItem },
     playSound
   );

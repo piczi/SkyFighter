@@ -93,7 +93,7 @@ export function useSound() {
         createPowerUpSound(ctx, now);
         break;
       case 'bomb':
-        createBombSound(ctx, now);
+        createBombSound(ctx);
         break;
       case 'shield':
         createShieldSound(ctx, now);

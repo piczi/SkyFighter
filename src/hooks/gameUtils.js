@@ -276,7 +276,7 @@ export function shouldSpawnBoss(level, stage) {
  */
 export function createBossConfig(gameWidth, stage, baseSpeed, baseSize) {
   const bossSize = baseSize * 3;
-  const bossHp = 20 + (stage - 1) * 10;
+  const bossHp = 40 + (stage - 1) * 20;
   
   return {
     x: gameWidth / 2 - bossSize / 2,

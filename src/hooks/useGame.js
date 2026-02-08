@@ -1,6 +1,5 @@
 // 飞机大战游戏 Hook - 主入口
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSound } from './useSound';
 import { useGamePool } from './useGamePool';
 import { useGameCollision } from './useGameCollision';
 import { useGameLogic } from './useGameLogic';
@@ -12,8 +11,12 @@ import {
 } from './gameConstants';
 
 
-export function useGame() {
-  const { playSound } = useSound();
+export function useGame({ soundEnabled = true, playSound } = {}) {
+  // 由外部（例如 CanvasGame）注入 playSound，避免在 useGame 内部再创建一套 useSound 状态
+  const playSoundSafe = useCallback((type) => {
+    if (!soundEnabled) return;
+    if (typeof playSound === 'function') playSound(type);
+  }, [soundEnabled, playSound]);
   
   // Game Pool
   const {
@@ -133,7 +136,7 @@ export function useGame() {
   const useHandleBomb = useCallback(() => {
     if (bombCount > 0 && gameState === 'playing') {
       setBombCount(prev => prev - 1);
-      playSound('bomb');
+      playSoundSafe('bomb');
       
       enemiesRef.current.forEach(enemy => {
         const particles = [];
@@ -167,7 +170,7 @@ export function useGame() {
       enemiesRef.current = [];
       setScore(scoreRef.current);
     }
-  }, [bombCount, gameState, playSound, getParticle]);
+  }, [bombCount, gameState, playSoundSafe, getParticle]);
 
   // 处理触摸/鼠标移动
   const handleMove = useCallback((x, y) => {
@@ -201,7 +204,7 @@ export function useGame() {
         combo,
         maxCombo,
         score,
-        playSound,
+        playSound: playSoundSafe,
         getBullet,
         getEnemy,
         getParticle,
@@ -248,7 +251,7 @@ export function useGame() {
         comboResetTimeoutRef.current = null;
       }
     };
-  }, [gameState, level, score, combo, maxCombo, stage, boss, playSound,
+  }, [gameState, level, score, combo, maxCombo, stage, boss, playSoundSafe,
       getBullet, getEnemy, getParticle, getItem, returnBullet, returnParticle, returnExplosion,
       createPlayerBullets, spawnEnemy, handleShooterEnemy, handleBomberEnemy, handleSplitterEnemy,
       handleBoss, updateBullets, handleItemCollection, createBossConfig,
@@ -281,6 +284,6 @@ export function useGame() {
     playerRef,
     bulletsRef,
     enemiesRef,
-    soundEnabled: true,
+    soundEnabled,
   };
 }

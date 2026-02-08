@@ -1,5 +1,4 @@
 // Boss相关逻辑
-import { createBossConfig } from './gameUtils';
 import {
   BULLET_WIDTH,
   BULLET_HEIGHT,

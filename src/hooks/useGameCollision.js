@@ -197,13 +197,22 @@ export function useGameCollision() {
           }
         }
         
-        if (hit) {
-          bossBulletsHit.add(bullet.id);
-          // 子弹伤害添加到总伤害
-          const damage = bullet.damage || 1;
-          totalDamage += damage;
-          playSound('hit');
-        }
+         if (hit) {
+           bossBulletsHit.add(bullet.id);
+           // 子弹伤害添加到总伤害，对Boss增加伤害乘数
+           let baseDamage = bullet.damage || 1;
+           
+           // 激光武器对Boss的伤害进行限制
+           if (bullet.isLaser) {
+             // 激光武器对Boss的最大伤害为4（即使玩家火力等级很高）
+             baseDamage = Math.min(baseDamage, 4);
+           }
+           
+           const bossDamageMultiplier = 2; // Boss伤害乘数
+           const damage = baseDamage * bossDamageMultiplier;
+           totalDamage += damage;
+           playSound('hit');
+         }
       }
       
       // Boss子弹击中玩家

@@ -5,8 +5,8 @@ import { useSound } from '../hooks/useSound';
 import { GameRenderer } from './GameRenderer';
 
 export function CanvasGame() {
-  const gameData = useGame();
-  const { playSound, toggleSound } = useSound();
+  const { soundEnabled, playSound, toggleSound } = useSound();
+  const gameData = useGame({ soundEnabled, playSound });
   
   const {
     gameState,

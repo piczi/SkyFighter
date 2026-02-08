@@ -158,7 +158,7 @@ export function createPowerUpSound(ctx, now) {
   });
 }
 
-export function createBombSound(ctx, now) {
+export function createBombSound(ctx) {
   // 炸弹音效 - 连续爆炸
   for (let i = 0; i < 5; i++) {
     setTimeout(() => {

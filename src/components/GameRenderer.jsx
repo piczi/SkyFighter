@@ -75,7 +75,7 @@ export function GameRenderer({
       }
       else {
         // 非 playing 状态，绘制覆盖层
-        drawOverlay(ctx, gameState, gameWidth, gameHeight, { soundEnabled: gameData.soundEnabled });
+        drawOverlay(ctx, gameState, gameWidth, gameHeight, gameData);
       }
       
       animationId = requestAnimationFrame(gameLoop);

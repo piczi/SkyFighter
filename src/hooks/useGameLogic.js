@@ -11,15 +11,15 @@ import { ENEMY_SIZE } from './gameConstants';
  * @returns {Object} 游戏逻辑函数
  */
 export function useGameLogic() {
-  const memoizedCreatePlayerBullets = useCallback(createPlayerBullets, []);
-  const memoizedSpawnEnemy = useCallback(spawnEnemy, []);
-  const memoizedHandleShooterEnemy = useCallback(handleShooterEnemy, []);
-  const memoizedHandleBomberEnemy = useCallback(handleBomberEnemy, []);
-  const memoizedHandleSplitterEnemy = useCallback(handleSplitterEnemy, []);
-  const memoizedHandleBoss = useCallback(handleBoss, []);
-  const memoizedUpdateBullets = useCallback(updateBullets, []);
-  const memoizedHandleItemCollection = useCallback(handleItemCollection, []);
-  const memoizedCreateBossConfig = useCallback(createBossConfig, []);
+  const memoizedCreatePlayerBullets = useCallback((...args) => createPlayerBullets(...args), []);
+  const memoizedSpawnEnemy = useCallback((...args) => spawnEnemy(...args), []);
+  const memoizedHandleShooterEnemy = useCallback((...args) => handleShooterEnemy(...args), []);
+  const memoizedHandleBomberEnemy = useCallback((...args) => handleBomberEnemy(...args), []);
+  const memoizedHandleSplitterEnemy = useCallback((...args) => handleSplitterEnemy(...args), []);
+  const memoizedHandleBoss = useCallback((...args) => handleBoss(...args), []);
+  const memoizedUpdateBullets = useCallback((...args) => updateBullets(...args), []);
+  const memoizedHandleItemCollection = useCallback((...args) => handleItemCollection(...args), []);
+  const memoizedCreateBossConfig = useCallback((...args) => createBossConfig(...args), []);
 
   return {
     createPlayerBullets: memoizedCreatePlayerBullets,
