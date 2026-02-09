@@ -1,7 +1,7 @@
 // 游戏主循环逻辑
 import {
-  GAME_WIDTH,
-  GAME_HEIGHT,
+  getGameWidth,
+  getGameHeight,
   PLAYER_SIZE,
   ENEMY_SIZE,
   LEVEL_CONFIG
@@ -66,6 +66,9 @@ export function runGameLoop(params) {
     lastPlayerStateRef
   } = params;
 
+  const GAME_WIDTH = getGameWidth();
+  const GAME_HEIGHT = getGameHeight();
+
   if (gameState !== 'playing') {
     gameLoopRef.current = requestAnimationFrame(() => runGameLoop(params));
     return;
@@ -79,10 +82,10 @@ export function runGameLoop(params) {
     const targetY = touchPositionRef.current.y;
     const currentX = playerRef.current.x;
     const currentY = playerRef.current.y;
-    
+
     // 添加平滑过渡效果，速度为0.2（20%的差值）
     const smoothingFactor = 0.2;
-    const newX = Math.max(PLAYER_SIZE / 2, Math.min(GAME_WIDTH - PLAYER_SIZE / 2, 
+    const newX = Math.max(PLAYER_SIZE / 2, Math.min(GAME_WIDTH - PLAYER_SIZE / 2,
       currentX + (targetX - currentX) * smoothingFactor));
     const newY = Math.max(PLAYER_SIZE / 2, Math.min(GAME_HEIGHT - PLAYER_SIZE / 2,
       currentY + (targetY - currentY) * smoothingFactor));
@@ -235,11 +238,17 @@ export function runGameLoop(params) {
 
   // 敌人子弹伤害
   const enemyBulletDamage = collisionResult.enemyBulletHits * 10;
-  if (enemyBulletDamage > 0) {
+  let totalDamage = enemyBulletDamage;
+  
+  // 玩家被敌人碰撞伤害
+  if (collisionResult.playerHitByEnemy) {
+    totalDamage += 20; // 被敌人碰撞造成20点伤害
+  }
+  
+  if (totalDamage > 0) {
     if (playerRef.current.shield <= 0) {
-      playerRef.current.hp = Math.max(0, playerRef.current.hp - enemyBulletDamage);
+      playerRef.current.hp = Math.max(0, playerRef.current.hp - totalDamage);
     } else {
-      const totalDamage = enemyBulletDamage;
       if (playerRef.current.shield >= totalDamage) {
         playerRef.current.shield -= totalDamage;
       } else {

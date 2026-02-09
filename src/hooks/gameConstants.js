@@ -1,8 +1,30 @@
 // 游戏常量
 
-// 游戏尺寸
-export const GAME_WIDTH = window.innerWidth;
-export const GAME_HEIGHT = window.innerHeight;
+// 游戏尺寸 - 动态获取
+let gameWidthValue = 0;
+let gameHeightValue = 0;
+
+export const getGameWidth = () => {
+  if (gameWidthValue === 0) {
+    gameWidthValue = typeof window !== 'undefined' ? window.innerWidth : 800;
+  }
+  return gameWidthValue;
+};
+
+export const getGameHeight = () => {
+  if (gameHeightValue === 0) {
+    gameHeightValue = typeof window !== 'undefined' ? window.innerHeight : 600;
+  }
+  return gameHeightValue;
+};
+
+export const setGameSize = (width, height) => {
+  gameWidthValue = width;
+  gameHeightValue = height;
+};
+
+export const GAME_WIDTH = getGameWidth();
+export const GAME_HEIGHT = getGameHeight();
 
 // 游戏对象尺寸
 export const PLAYER_SIZE = 50;

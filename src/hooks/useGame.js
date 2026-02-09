@@ -5,6 +5,8 @@ import { useGameCollision } from './useGameCollision';
 import { useGameLogic } from './useGameLogic';
 import { runGameLoop } from './gameLoop';
 import {
+  getGameWidth,
+  getGameHeight,
   GAME_WIDTH,
   GAME_HEIGHT,
   LEVEL_CONFIG
@@ -54,15 +56,15 @@ export function useGame({ soundEnabled = true, playSound } = {}) {
   const [level, setLevel] = useState(1);
   const [stage, setStage] = useState(1);
   const [boss, setBoss] = useState(null);
-  const [player, setPlayer] = useState({
-    x: GAME_WIDTH / 2,
-    y: GAME_HEIGHT - 100,
+  const [player, setPlayer] = useState(() => ({
+    x: getGameWidth() / 2,
+    y: getGameHeight() - 100,
     hp: 100,
     power: 1,
     shield: 0,
     weapon: 'normal',
     skills: []
-  });
+  }));
   const [bullets, setBullets] = useState([]);
   const [enemies, setEnemies] = useState([]);
   const [items, setItems] = useState([]);
@@ -77,8 +79,8 @@ export function useGame({ soundEnabled = true, playSound } = {}) {
   const enemiesRef = useRef([]);
   const bulletsRef = useRef([]);
   const playerRef = useRef({
-    x: GAME_WIDTH / 2,
-    y: GAME_HEIGHT - 100,
+    x: getGameWidth() / 2,
+    y: getGameHeight() - 100,
     hp: 100,
     power: 1,
     shield: 0,
@@ -86,7 +88,7 @@ export function useGame({ soundEnabled = true, playSound } = {}) {
     skills: []
   });
   const lastPlayerStateRef = useRef(null);
-  const touchPositionRef = useRef({ x: GAME_WIDTH / 2, y: GAME_HEIGHT - 100 });
+  const touchPositionRef = useRef({ x: getGameWidth() / 2, y: getGameHeight() - 100 });
   const isTouchingRef = useRef(false);
   const comboResetTimeoutRef = useRef(null);
 
@@ -99,18 +101,21 @@ export function useGame({ soundEnabled = true, playSound } = {}) {
     setBoss(null);
     setCombo(0);
     setMaxCombo(0);
-    
+
+    const currentWidth = getGameWidth();
+    const currentHeight = getGameHeight();
+
     // 使用当前触摸位置或默认位置
     const initialPlayer = {
-      x: touchPositionRef.current.x || GAME_WIDTH / 2,
-      y: touchPositionRef.current.y || GAME_HEIGHT - 100,
+      x: touchPositionRef.current.x || currentWidth / 2,
+      y: touchPositionRef.current.y || currentHeight - 100,
       hp: 100,
       power: 1,
       shield: 0,
       weapon: 'normal',
       skills: []
     };
-    
+
     playerRef.current = initialPlayer;
     setPlayer(initialPlayer);
     bulletsRef.current = [];
@@ -274,8 +279,8 @@ export function useGame({ soundEnabled = true, playSound } = {}) {
     explosions,
     bombCount,
 
-    gameWidth: GAME_WIDTH,
-    gameHeight: GAME_HEIGHT,
+    gameWidth: getGameWidth(),
+    gameHeight: getGameHeight(),
     startGame,
     togglePause,
     handleMove,

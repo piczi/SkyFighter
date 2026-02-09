@@ -23,11 +23,47 @@ export function CanvasGame() {
 
   const canvasRef = useRef(null);
   const gameStateRef = useRef(gameState);
+  const uiClickHandlersRef = useRef(null);
 
   // 同步 gameState 到 ref
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
+
+  // 初始化 UI 点击处理函数 ref
+  useEffect(() => {
+    uiClickHandlersRef.current = {
+      gameWidth,
+      gameHeight,
+      toggleSound,
+      playSound,
+      startGame,
+      togglePause
+    };
+  }, [gameWidth, gameHeight, toggleSound, playSound, startGame, togglePause]);
+
+  // 处理窗口大小变化
+  useEffect(() => {
+    const updateSize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      if (canvasRef.current) {
+        canvasRef.current.width = width;
+        canvasRef.current.height = height;
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateSize, 100);
+    });
+
+    return () => {
+      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', updateSize);
+    };
+  }, []);
 
   // 处理点击开始/继续游戏
   const handleCanvasClick = (e) => {
@@ -38,14 +74,21 @@ export function CanvasGame() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // 处理技能点击
-    if (gameState === 'playing') {
-      // 技能点击处理移到 UIOverlay 组件中
+    handleUIClick(x, y);
+  };
+
+  // 统一的 UI 点击处理函数
+  const handleUIClick = (x, y) => {
+    const handlers = uiClickHandlersRef.current;
+    if (!handlers) return;
+
+    if (gameStateRef.current === 'playing') {
       return;
     }
 
+    const { gameWidth, gameHeight, toggleSound, playSound, startGame, togglePause } = handlers;
+
     if (gameStateRef.current === 'start') {
-      // 检查是否点击音效按钮
       const soundBtnX = gameWidth / 2;
       const soundBtnY = gameHeight / 2 + 55;
       const distToSound = Math.sqrt(Math.pow(x - soundBtnX, 2) + Math.pow(y - soundBtnY, 2));
@@ -54,12 +97,11 @@ export function CanvasGame() {
         return;
       }
 
-        // 检查是否点击开始按钮
-        if (y > gameHeight / 2 + 260 && y < gameHeight / 2 + 310 &&
-            x > gameWidth / 2 - 100 && x < gameWidth / 2 + 100) {
-          playSound('start');
-          startGame();
-        }
+      if (y > gameHeight / 2 + 260 && y < gameHeight / 2 + 310 &&
+          x > gameWidth / 2 - 100 && x < gameWidth / 2 + 100) {
+        playSound('start');
+        startGame();
+      }
     }
     else if (gameStateRef.current === 'paused') {
       if (y > gameHeight / 2 + 30 && y < gameHeight / 2 + 80 &&
@@ -81,53 +123,68 @@ export function CanvasGame() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let isTouchDevice = false;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     const handleTouchStart = (e) => {
-      isTouchDevice = true;
       e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-      handleMove(x, y);
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        if (gameStateRef.current !== 'playing') {
+          handleUIClick(x, y);
+        } else {
+          handleMove(x, y);
+        }
+      }
     };
 
     const handleTouchMove = (e) => {
-      if (!isTouchDevice) return;
       e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-      handleMove(x, y);
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        handleMove(x, y);
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      e.preventDefault();
+      handleEnd();
     };
 
     const handleMouseMove = (e) => {
-      // 对于鼠标设备，移动时始终跟随
-      if (isTouchDevice) return; // 如果是触摸设备，忽略鼠标移动
+      if (isTouchDevice) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       handleMove(x, y);
     };
 
-    const handleTouchEnd = () => handleEnd();
     const handleMouseLeave = () => {
-      // 鼠标离开canvas时停止跟随
       handleEnd();
     };
+
     const handleMouseDown = (e) => {
-      // 鼠标点击时也触发移动（兼容性）
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       handleMove(x, y);
     };
+
+    canvas.style.touchAction = 'none';
+    canvas.style.webkitTouchCallout = 'none';
+    canvas.style.userSelect = 'none';
+    canvas.style.webkitUserSelect = 'none';
 
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseleave', handleMouseLeave);
@@ -136,6 +193,7 @@ export function CanvasGame() {
       canvas.removeEventListener('touchstart', handleTouchStart);
       canvas.removeEventListener('touchmove', handleTouchMove);
       canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseleave', handleMouseLeave);

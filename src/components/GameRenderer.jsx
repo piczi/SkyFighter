@@ -1,17 +1,18 @@
 // 游戏渲染器组件
-import { useEffect } from 'react';
-import { 
+import { useEffect, useState } from 'react';
+import {
   drawStars,
-  drawPlayer, 
-  drawEnemy, 
-  drawBoss, 
-  drawBullet, 
-  drawItem, 
-  drawExplosion, 
-  drawHUD, 
+  drawPlayer,
+  drawEnemy,
+  drawBoss,
+  drawBullet,
+  drawItem,
+  drawExplosion,
+  drawHUD,
   drawFPS,
   drawOverlay
 } from './drawers';
+import { getGameWidth, getGameHeight } from '../hooks/gameConstants';
 
 export function GameRenderer({
   canvasRef,
@@ -21,6 +22,32 @@ export function GameRenderer({
   handleCanvasClick,
   gameData
 }) {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      setDimensions({
+        width: getGameWidth(),
+        height: getGameHeight()
+      });
+    };
+
+    updateDimensions();
+    const handleResize = () => {
+      setTimeout(updateDimensions, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
+  const renderWidth = dimensions.width || gameWidth;
+  const renderHeight = dimensions.height || gameHeight;
 
   // 游戏循环
   useEffect(() => {
@@ -34,12 +61,12 @@ export function GameRenderer({
 
       // 清除画布并重置状态（优化清除性能）
       ctx.fillStyle = '#050510';
-      ctx.fillRect(0, 0, gameWidth, gameHeight);
+      ctx.fillRect(0, 0, renderWidth, renderHeight);
       ctx.setTransform(1, 0, 0, 1, 0, 0); // 重置变换矩阵
       ctx.beginPath(); // 清除路径
 
       // 绘制星空
-      drawStars(ctx, gameWidth, gameHeight);
+      drawStars(ctx, renderWidth, renderHeight);
 
       // 只在 playing 状态时绘制游戏元素
       if (gameState === 'playing') {
@@ -66,18 +93,16 @@ export function GameRenderer({
         }
 
         // 绘制 HUD
-        drawHUD(ctx, gameData.playerRef.current, gameData.score, gameData.level, gameData.bombCount, gameData.combo, gameData.stage, gameWidth);
-
-
+        drawHUD(ctx, gameData.playerRef.current, gameData.score, gameData.level, gameData.bombCount, gameData.combo, gameData.stage, renderWidth);
 
         // 绘制 FPS
-        drawFPS(ctx, gameWidth);
+        drawFPS(ctx, renderWidth);
       }
       else {
         // 非 playing 状态，绘制覆盖层
-        drawOverlay(ctx, gameState, gameWidth, gameHeight, gameData);
+        drawOverlay(ctx, gameState, renderWidth, renderHeight, gameData);
       }
-      
+
       animationId = requestAnimationFrame(gameLoop);
     };
 
@@ -88,13 +113,13 @@ export function GameRenderer({
         cancelAnimationFrame(animationId);
       }
     };
-  }, [gameState, gameWidth, gameHeight, gameData, canvasRef]);
+  }, [gameState, renderWidth, renderHeight, gameData, canvasRef]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={gameWidth}
-      height={gameHeight}
+      width={renderWidth}
+      height={renderHeight}
       onClick={handleCanvasClick}
       style={{ cursor: gameState === 'playing' ? 'crosshair' : 'default' }}
     />

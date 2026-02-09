@@ -22,8 +22,9 @@ export function createPlayerBullets(player, now, getBullet) {
   // 普通武器
   if (player.weapon === 'normal') {
     if (player.power >= 1) {
+      // 单发：完全居中
       newBullets.push(getBullet(() => ({ 
-        x: player.x - BULLET_WIDTH / 2, 
+        x: player.x, 
         y: player.y - BULLET_HEIGHT, 
         damage: 1, 
         id: now,
@@ -32,17 +33,19 @@ export function createPlayerBullets(player, now, getBullet) {
       })));
     }
     if (player.power >= 2) {
+      // 双发：对称分布在中心两侧
+      const offset = BULLET_WIDTH;
       newBullets.push(getBullet(() => ({ 
-        x: player.x - BULLET_WIDTH * 1.5, 
-        y: player.y - BULLET_HEIGHT + 10, 
+        x: player.x - offset, 
+        y: player.y - BULLET_HEIGHT, 
         damage: 1, 
         id: now + 1,
         prevX: undefined,
         prevY: undefined
       })));
       newBullets.push(getBullet(() => ({ 
-        x: player.x + BULLET_WIDTH * 0.5, 
-        y: player.y - BULLET_HEIGHT + 10, 
+        x: player.x + offset, 
+        y: player.y - BULLET_HEIGHT, 
         damage: 1, 
         id: now + 2,
         prevX: undefined,
@@ -50,21 +53,29 @@ export function createPlayerBullets(player, now, getBullet) {
       })));
     }
     if (player.power >= 3) {
+      // 三发：中心 + 两侧对称
+      const sideOffset = BULLET_WIDTH * 1.5;
       newBullets.push(getBullet(() => ({ 
-        x: player.x - BULLET_WIDTH * 2.5, 
-        y: player.y - BULLET_HEIGHT + 20, 
+        x: player.x - sideOffset, 
+        y: player.y - BULLET_HEIGHT, 
         damage: 1, 
-        angle: -0.1, 
         id: now + 3,
         prevX: undefined,
         prevY: undefined
       })));
       newBullets.push(getBullet(() => ({ 
-        x: player.x + BULLET_WIDTH * 1.5, 
-        y: player.y - BULLET_HEIGHT + 20, 
+        x: player.x, 
+        y: player.y - BULLET_HEIGHT, 
         damage: 1, 
-        angle: 0.1, 
         id: now + 4,
+        prevX: undefined,
+        prevY: undefined
+      })));
+      newBullets.push(getBullet(() => ({ 
+        x: player.x + sideOffset, 
+        y: player.y - BULLET_HEIGHT, 
+        damage: 1, 
+        id: now + 5,
         prevX: undefined,
         prevY: undefined
       })));
@@ -87,34 +98,43 @@ export function createPlayerBullets(player, now, getBullet) {
   }
   // 散射武器
   else if (player.weapon === 'spread') {
-    const angles = [-0.3, -0.15, 0, 0.15, 0.3];
+    // 对称的角度分布，确保居中
+    const angles = [-0.4, -0.2, 0, 0.2, 0.4];
     const bulletCount = Math.min(player.power + 1, angles.length);
     
-    if (bulletCount >= 1) {
+    // 确保总是有居中的子弹
+    newBullets.push(getBullet(() => ({ 
+      x: player.x, 
+      y: player.y - BULLET_HEIGHT, 
+      damage: 1, 
+      angle: 0,
+      id: now,
+      prevX: undefined,
+      prevY: undefined
+    })));
+    
+    // 添加对称的侧边子弹
+    for (let i = 1; i < bulletCount && i <= 2; i++) {
+      // 左侧
       newBullets.push(getBullet(() => ({ 
-        x: player.x - BULLET_WIDTH / 2, 
+        x: player.x, 
         y: player.y - BULLET_HEIGHT, 
         damage: 1, 
-        angle: 0,
-        id: now,
+        angle: angles[2 - i], // -0.2, -0.4
+        id: now + i * 2 - 1,
         prevX: undefined,
         prevY: undefined
       })));
-    }
-    
-    for (let i = 1; i < bulletCount; i++) {
-      const angleIndex = i <= 2 ? i : i + 1;
-      if (angleIndex < angles.length) {
-        newBullets.push(getBullet(() => ({ 
-          x: player.x - BULLET_WIDTH / 2, 
-          y: player.y - BULLET_HEIGHT, 
-          damage: 1, 
-          angle: angles[angleIndex],
-          id: now + i,
-          prevX: undefined,
-          prevY: undefined
-        })));
-      }
+      // 右侧
+      newBullets.push(getBullet(() => ({ 
+        x: player.x, 
+        y: player.y - BULLET_HEIGHT, 
+        damage: 1, 
+        angle: angles[2 + i], // 0.2, 0.4
+        id: now + i * 2,
+        prevX: undefined,
+        prevY: undefined
+      })));
     }
   }
 

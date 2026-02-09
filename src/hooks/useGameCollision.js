@@ -165,6 +165,7 @@ export function useGameCollision() {
     }
 
     // 检测玩家与敌人碰撞
+    let playerHitByEnemy = false;
     for (const enemy of enemiesRef.current) {
       if (deadEnemies.has(enemy.id)) continue;
 
@@ -183,10 +184,11 @@ export function useGameCollision() {
 
       if (hit) {
         deadEnemies.add(enemy.id);
+        playerHitByEnemy = true;
       }
     }
 
-    return { hitBullets, hitEnemies, items, deadEnemies, enemyBulletHits };
+    return { hitBullets, hitEnemies, items, deadEnemies, enemyBulletHits, playerHitByEnemy };
   }, []);
 
   /**
